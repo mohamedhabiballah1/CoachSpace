@@ -9,13 +9,15 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/usr/src/app
-      - /usr/src/app/node_modules
+      - frontend_node_modules:/usr/src/app/node_modules
     environment:
       - NODE_ENV=development
+      - REACT_APP_API_URL=http://backend:8000
     depends_on:
       - backend
     networks:
       - coachspace-network
+    command: sh -c "npm install && npm start"
 
   backend:
     build:
@@ -25,13 +27,30 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/usr/src/app
-      - /usr/src/app/node_modules
+      - backend_node_modules:/usr/src/app/node_modules
     environment:
       - NODE_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/coachspace
+    depends_on:
+      - mongo
     networks:
       - coachspace-network
-    command: npm run dev
+    command: sh -c "npm install && npm run dev"
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - coachspace-network
 
 networks:
   coachspace-network:
     driver: bridge
+
+volumes:
+  frontend_node_modules:
+  backend_node_modules:
+  mongo_data:
