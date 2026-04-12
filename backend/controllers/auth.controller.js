@@ -46,3 +46,37 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: 'Server error during registration' });
   }
 };
+
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = User.findOne({ email, password: passwordHash });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    } else {
+      const token = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.status(200).json({
+        message: 'Login successful',
+        token,
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+        },
+      });
+    }
+  } catch (e) {
+
+  }
+};
+
+
