@@ -27,16 +27,9 @@ const clientSchema = new mongoose.Schema({
     required: true,
     default: Date.now,
   },
-  mesures: [{
-    date: {
-      type: Date,
-      default: Date.now,
-    },
-    // Add your mesure fields here 
-  }],
-  goal: {
+  goalType: {
     type: String,
-    trim: true,
+    enum: ['lose_fat', 'gain_muscle', 'body_recomp', 'maintenance'],
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,

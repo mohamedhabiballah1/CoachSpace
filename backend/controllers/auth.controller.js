@@ -75,7 +75,8 @@ exports.login = async (req, res) => {
       });
     }
   } catch (e) {
-
+    console.error('Login error:', e);
+    res.status(500).json({ message: 'Server error during login' });
   }
 };
 
