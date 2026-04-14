@@ -6,11 +6,11 @@ const fs = require("fs");
 const path = require("path");
 
 const PORT = process.env.PORT || 8000;
-const HOST = process.env.HOST || 'http://localhost:8000';
-// const authRoutes = require('./routes/authRoutes');
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+
 
 const app = express();
-app.use(cors({ origin: HOST, credentials: true }));
+app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(express.json());
 
 const routesDirectory = path.join(__dirname, "routes");

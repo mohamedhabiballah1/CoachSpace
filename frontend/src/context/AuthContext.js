@@ -27,14 +27,14 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (credentials) => {
+  const login = async (email, password) => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({email, password}),
       });
 
       if (!response.ok) {
@@ -44,7 +44,6 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
 
-      // Store user data and token
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 

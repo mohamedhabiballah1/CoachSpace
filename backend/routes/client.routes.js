@@ -13,4 +13,4 @@ router.get('/clients/:clientId/measurements/progress', authMiddleware, clientCon
 router.delete('/clients/:clientId', authMiddleware, clientController.deleteClient);
 router.delete('/clients/:clientId/measurements/:measurementId', authMiddleware, clientController.deleteMeasurement);
 
-module.exports = router; 
+module.exports = router;
