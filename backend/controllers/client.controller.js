@@ -1,7 +1,5 @@
 const User = require('../models/User.model');
 const Client = require('../models/Client.model');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const Measurement = require('../models/Measurement.model');
 
 const numericFields = [
@@ -146,10 +144,45 @@ const createClient = async (req, res) => {
             email: data.email,
             number: data.number,
             startDate: data.startDate,
-            goal: data.goal,
+            goalType: data.goalType,
+            notes: data.notes,
             user: req.user._id,
         });
         await client.save();
+
+        await User.findByIdAndUpdate(req.user._id, { $inc: { numClients: 1 } });
+
+        const hasInitialMeasurement = [
+            'weight','height','bodyFat','muscleMass',
+            'neck','shoulders','chest','waist','hips',
+            'leftArm','rightArm','leftForearm','rightForearm',
+            'leftThigh','rightThigh','leftCalf','rightCalf',
+        ].some(f => data[f] != null && data[f] !== '');
+
+        if (hasInitialMeasurement) {
+            const measurement = new Measurement({
+                coach: req.user._id,
+                client: client._id,
+                weight: data.weight || null,
+                height: data.height || null,
+                bodyFat: data.bodyFat || null,
+                muscleMass: data.muscleMass || null,
+                neck: data.neck || null,
+                shoulders: data.shoulders || null,
+                chest: data.chest || null,
+                waist: data.waist || null,
+                hips: data.hips || null,
+                leftArm: data.leftArm || null,
+                rightArm: data.rightArm || null,
+                leftForearm: data.leftForearm || null,
+                rightForearm: data.rightForearm || null,
+                leftThigh: data.leftThigh || null,
+                rightThigh: data.rightThigh || null,
+                leftCalf: data.leftCalf || null,
+                rightCalf: data.rightCalf || null,
+            });
+            await measurement.save();
+        }
 
         res.status(201).json({
             message: 'Client created successfully',
@@ -157,17 +190,34 @@ const createClient = async (req, res) => {
         });
     } catch (error) {
         console.error('Create client error:', error);
-        res.status(500).json({ message: 'Server error during client creation' });
+        res.status(500).json({ success: false, message: 'Server error during client creation' });
     }
 };
 
 const getClients = async (req, res) => {
     try {
-        const clients = await Client.find({ user: req.user._id });
-        res.status(200).json(clients);
+        const page  = Math.max(1, parseInt(req.query.page)  || 1);
+        const limit = Math.min(100, parseInt(req.query.limit) || 20);
+        const skip  = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        const filter = { user: req.user._id };
+        if (search) {
+            filter.$or = [
+                { firstName: { $regex: search, $options: 'i' } },
+                { lastName:  { $regex: search, $options: 'i' } },
+            ];
+        }
+
+        const [clients, total] = await Promise.all([
+            Client.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Client.countDocuments(filter),
+        ]);
+
+        res.status(200).json({ clients, total, page, pages: Math.ceil(total / limit) });
     } catch (error) {
         console.error('Get clients error:', error);
-        res.status(500).json({ message: 'Server error during fetching clients' });
+        res.status(500).json({ success: false, message: 'Server error during fetching clients' });
     }
 };
 
@@ -181,7 +231,8 @@ const getClientById = async (req, res) => {
         if (!client) {
             return res.status(404).json({ message: 'Client not found' });
         }
-
+        console.log('Client found:', client);
+        console.log('Measurements found:', measurements);
         res.status(200).json({ client, measurements });
 
     } catch (error) {
@@ -309,26 +360,133 @@ const deleteClient = async (req, res) => {
         const clientId = req.params.clientId;
         const client = await Client.findOneAndDelete({ _id: clientId, user: req.user._id });
         if (!client) {
-            return res.status(404).json({ message: 'Client not found' });
+            return res.status(404).json({ success: false, message: 'Client not found' });
         }
+        await Measurement.deleteMany({ client: clientId });
+        await User.findByIdAndUpdate(req.user._id, { $inc: { numClients: -1 } });
         res.status(200).json({
+            success: true,
             message: 'Client deleted successfully',
             client,
         });
 
     } catch (error) {
         console.error('Delete client error:', error);
-        res.status(500).json({ message: 'Server error during deleting client' });
+        res.status(500).json({ success: false, message: 'Server error during deleting client' });
     }
 }
+
+const generatePDFReport = async (req, res) => {
+    try {
+        const PDFDocument = require('pdfkit');
+        const { clientId } = req.params;
+
+        const client  = await Client.findOne({ _id: clientId, user: req.user._id });
+        if (!client) return res.status(404).json({ success: false, message: 'Client not found' });
+
+        const measurements = await Measurement.find({ client: clientId }).sort({ date: 1 });
+        const coach = req.user;
+
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${client.firstName}_${client.lastName}_report.pdf"`);
+        doc.pipe(res);
+
+        // Header
+        doc.fontSize(28).font('Helvetica-Bold').text('COACHSPACE', 50, 50);
+        doc.fontSize(12).font('Helvetica').fillColor('#666').text('Progress Report', 50, 85);
+        doc.moveTo(50, 105).lineTo(545, 105).strokeColor('#cccc33').lineWidth(2).stroke();
+
+        // Client info
+        doc.moveDown(2).fontSize(20).font('Helvetica-Bold').fillColor('#000')
+           .text(`${client.firstName} ${client.lastName}`);
+        doc.fontSize(11).font('Helvetica').fillColor('#444')
+           .text(`Goal: ${(client.goalType || '').replace(/_/g, ' ')}`)
+           .text(`Start Date: ${client.startDate ? new Date(client.startDate).toLocaleDateString() : '—'}`)
+           .text(`Report Date: ${new Date().toLocaleDateString()}`);
+
+        if (measurements.length > 1) {
+            const baseline = measurements[0];
+            const latest   = measurements[measurements.length - 1];
+
+            doc.moveDown().fontSize(14).font('Helvetica-Bold').fillColor('#000').text('Measurements Summary');
+            doc.moveTo(50, doc.y + 4).lineTo(545, doc.y + 4).strokeColor('#ddd').lineWidth(1).stroke();
+            doc.moveDown(0.5);
+
+            const fields = ['weight','height','bodyFat','muscleMass','chest','waist','hips','leftArm','rightArm'];
+            fields.forEach(f => {
+                const b = baseline[f]; const l = latest[f];
+                if (b == null && l == null) return;
+                const change = (b != null && l != null) ? (l - b).toFixed(1) : '—';
+                const sign = change > 0 ? '+' : '';
+                doc.fontSize(10).font('Helvetica').fillColor('#333')
+                   .text(`${f}: ${b ?? '—'} → ${l ?? '—'}  (${sign}${change})`, { continued: false });
+            });
+
+            if (latest.weight && latest.height && latest.height > 0) {
+                const bmi = latest.weight / Math.pow(latest.height / 100, 2);
+                doc.moveDown().fontSize(12).font('Helvetica-Bold').text(`BMI: ${bmi.toFixed(1)}`);
+            }
+        } else {
+            doc.moveDown().fontSize(11).font('Helvetica').fillColor('#666').text('Insufficient measurements for progress comparison.');
+        }
+
+        // Coach info
+        doc.moveDown(3).fontSize(10).font('Helvetica').fillColor('#888')
+           .text(`Coach: ${coach.firstName} ${coach.lastName}`)
+           .text(`Contact: ${coach.email} | ${coach.phoneNumber}`);
+
+        doc.end();
+    } catch (error) {
+        console.error('PDF report error:', error);
+        if (!res.headersSent) res.status(500).json({ success: false, message: 'Error generating PDF' });
+    }
+};
+
+const updateHealthProfile = async (req, res) => {
+    try {
+        const { clientId } = req.params;
+        const client = await Client.findOne({ _id: clientId, user: req.user._id });
+        if (!client) return res.status(404).json({ success: false, message: 'Client not found' });
+
+        const { medicalNotes, injuries, healthQuestionnaire } = req.body;
+        if (medicalNotes !== undefined) client.medicalNotes = medicalNotes;
+        if (injuries !== undefined) client.injuries = injuries;
+        if (healthQuestionnaire !== undefined) client.healthQuestionnaire = { ...client.healthQuestionnaire, ...healthQuestionnaire };
+
+        await client.save();
+        res.status(200).json({ success: true, client });
+    } catch (error) {
+        console.error('Update health profile error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+const updateClient = async (req, res) => {
+    try {
+        const { clientId } = req.params;
+        const client = await Client.findOneAndUpdate(
+            { _id: clientId, user: req.user._id },
+            req.body,
+            { new: true, runValidators: true }
+        );
+        if (!client) return res.status(404).json({ success: false, message: 'Client not found' });
+        res.status(200).json({ success: true, client });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
 
 module.exports = {
     createClient,
     getClients,
     getClientById,
     getProgressReport,
-    addMeasurement, 
+    addMeasurement,
     updateMeasurement,
     deleteMeasurement,
-    deleteClient 
+    deleteClient,
+    updateHealthProfile,
+    updateClient,
+    generatePDFReport,
 };

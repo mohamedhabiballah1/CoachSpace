@@ -13,13 +13,11 @@ const clientSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
     lowercase: true,
     trim: true,
   },
   number: {
     type: String,
-    required: true,
     trim: true,
   },
   startDate: {
@@ -30,6 +28,25 @@ const clientSchema = new mongoose.Schema({
   goalType: {
     type: String,
     enum: ['lose_fat', 'gain_muscle', 'body_recomp', 'maintenance'],
+  },
+  notes: {
+    type: String,
+    trim: true,
+  },
+  medicalNotes: {
+    type: String,
+    trim: true,
+  },
+  injuries: {
+    type: [String],
+    default: [],
+  },
+  healthQuestionnaire: {
+    hasHeartCondition: { type: Boolean, default: false },
+    hasDiabetes: { type: Boolean, default: false },
+    hasJointIssues: { type: Boolean, default: false },
+    medications: { type: String, trim: true },
+    otherNotes: { type: String, trim: true },
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,

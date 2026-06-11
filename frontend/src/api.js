@@ -1,40 +1,60 @@
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+const getHeaders = (isFormData = false) => {
+  const token = localStorage.getItem('token');
+  const headers = {};
+  if (!isFormData) headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+};
+
+const handleResponse = async (res) => {
+  if (res.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+    throw new Error('Session expired. Please log in again.');
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
+};
+
 export const api = {
-  // Health check endpoint
-  healthCheck: async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/health`);
-      if (!response.ok) throw new Error('Health check failed');
-      return await response.json();
-    } catch (error) {
-      console.error('API health check error:', error);
-      throw error;
-    }
-  },
+  healthCheck: () =>
+    fetch(`${API_URL}/api/health`, { headers: getHeaders() }).then(handleResponse),
 
-  // Generic GET request
-  get: async (endpoint) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
-  },
+  get: (endpoint) =>
+    fetch(`${API_URL}${endpoint}`, { method: 'GET', headers: getHeaders() }).then(handleResponse),
 
-  // Generic POST request
-  post: async (endpoint, data) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+  post: (endpoint, data) =>
+    fetch(`${API_URL}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getHeaders(),
       body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
-  },
+    }).then(handleResponse),
+
+  put: (endpoint, data) =>
+    fetch(`${API_URL}${endpoint}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  patch: (endpoint, data) =>
+    fetch(`${API_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  delete: (endpoint) =>
+    fetch(`${API_URL}${endpoint}`, { method: 'DELETE', headers: getHeaders() }).then(handleResponse),
+
+  postForm: (endpoint, formData) =>
+    fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: formData,
+    }).then(handleResponse),
 };

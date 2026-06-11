@@ -33,6 +33,10 @@ app.get('/', (req, res) => {
   res.send('API running');
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, status: 'ok' });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
