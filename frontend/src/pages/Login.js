@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import logo from '../assets/logo1.png';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [loading, setLoading]   = useState(false);
+  const { login }               = useAuth();
+  const { showToast }           = useToast();
+  const navigate                = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    if (!email || !password) { showToast('Email and password are required.', 'error'); return; }
     setLoading(true);
-
     try {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Failed to login');
+      showToast(err.message || 'Failed to login', 'error');
     } finally {
       setLoading(false);
     }
@@ -35,14 +35,8 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-900/30 border border-red-500 text-red-400 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-gray-500 text-sm font-medium">
+              <label htmlFor="email" className="block text-gray-500 text-sm font-medium font-['DM_Mono'] uppercase tracking-wide">
                 Email
               </label>
               <input
@@ -57,7 +51,7 @@ const Login = () => {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="block text-gray-500 text-sm font-medium">
+              <label htmlFor="password" className="block text-gray-500 text-sm font-medium font-['DM_Mono'] uppercase tracking-wide">
                 Password
               </label>
               <input
@@ -79,6 +73,13 @@ const Login = () => {
               {loading ? 'Loading...' : 'Login'}
             </button>
           </form>
+
+          <p className="text-center text-[#555] text-[13px] font-['DM_Sans'] mt-6">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-[#c8f135] hover:underline">
+              Create one
+            </Link>
+          </p>
         </div>
       </div>
     </div>
