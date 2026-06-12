@@ -13,6 +13,8 @@ const app = express();
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(express.json());
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 const routesDirectory = path.join(__dirname, "routes");
 
 fs.readdirSync(routesDirectory).forEach(file => {
