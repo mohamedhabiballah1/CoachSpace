@@ -13,7 +13,10 @@ router.post('/plans',               auth, ctrl.createPlan);
 router.put('/plans/:id',            auth, ctrl.updatePlan);
 router.delete('/plans/:id',         auth, ctrl.deletePlan);
 
-router.post('/assign',              auth, ctrl.assignPlan);
-router.get('/client/:clientId',     auth, ctrl.getClientPlan);
+router.post('/assign',                              auth, ctrl.assignPlan);
+router.get('/client/:clientId',                     auth, ctrl.getClientPlan);
+
+router.post('/exercises/:exerciseId/assign',        auth, ctrl.assignExerciseToClients);
+router.get('/clients/:clientId/exercises',          auth, ctrl.getClientExercises);
 
 module.exports = router;

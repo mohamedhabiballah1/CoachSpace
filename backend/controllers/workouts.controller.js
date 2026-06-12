@@ -1,6 +1,7 @@
-const Exercise   = require('../models/Exercise.model');
-const WorkoutPlan = require('../models/WorkoutPlan.model');
-const ClientPlan  = require('../models/ClientPlan.model');
+const Exercise        = require('../models/Exercise.model');
+const WorkoutPlan     = require('../models/WorkoutPlan.model');
+const ClientPlan      = require('../models/ClientPlan.model');
+const ClientExercise  = require('../models/ClientExercise.model');
 
 // Exercises
 exports.getExercises = async (req, res) => {
@@ -78,5 +79,40 @@ exports.getClientPlan = async (req, res) => {
   try {
     const cp = await ClientPlan.findOne({ client: req.params.clientId, coach: req.user._id, status: 'active' }).populate('plan');
     res.json({ success: true, clientPlan: cp });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+};
+
+// Assign exercise to multiple clients
+exports.assignExerciseToClients = async (req, res) => {
+  try {
+    const { exerciseId } = req.params;
+    const { clientIds, notes } = req.body;
+
+    const exercise = await Exercise.findOne({ _id: exerciseId, coach: req.user._id });
+    if (!exercise) return res.status(404).json({ success: false, message: 'Exercise not found' });
+
+    let record = await ClientExercise.findOne({ coach: req.user._id, exercise: exerciseId });
+    if (record) {
+      const existing = record.clients.map(id => id.toString());
+      const toAdd = (clientIds || []).filter(id => !existing.includes(id));
+      record.clients.push(...toAdd);
+      if (notes !== undefined) record.notes = notes;
+      await record.save();
+    } else {
+      record = new ClientExercise({ coach: req.user._id, exercise: exerciseId, clients: clientIds || [], notes });
+      await record.save();
+    }
+
+    res.json({ success: true, record });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+};
+
+// Get all exercises assigned to a specific client
+exports.getClientExercises = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    const records = await ClientExercise.find({ coach: req.user._id, clients: clientId }).populate('exercise');
+    const exercises = records.map(r => ({ ...r.exercise.toObject(), assignmentNotes: r.notes, assignedAt: r.assignedAt }));
+    res.json({ success: true, exercises });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
