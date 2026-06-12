@@ -89,9 +89,9 @@ const Profile = () => {
   const initials = `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#0e0e0e] flex flex-col">
+    <div className="min-h-screen bg-[#0e0e0e] flex flex-col pb-16 md:pb-0">
       <Navbar />
-      <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-10">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-10">
 
         {/* Avatar + name */}
         <div className="flex items-center gap-5 mb-10">

@@ -44,8 +44,8 @@ const SmartDashboard = ({ clients, sessions, subscriptions, revenue }) => {
   const activeClients  = clients.length;
 
   return (
-    <div className="flex-1 overflow-y-auto p-8">
-      <h1 className="font-['Bebas_Neue'] text-[48px] text-[#f0ede6] leading-none mb-2">Dashboard</h1>
+    <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+      <h1 className="font-['Bebas_Neue'] text-[36px] sm:text-[48px] text-[#f0ede6] leading-none mb-2">Dashboard</h1>
       <p className="font-['DM_Mono'] text-[11px] text-[#555] mb-8">
         {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'long', year:'numeric' })}
       </p>
@@ -211,13 +211,13 @@ const Dashboard = () => {
 
   const handleSelectClient = (client) => fetchClientDetails(client._id);
 
-  const handleAddClient = async () => {
+  const handleAddClient = async (extra = {}) => {
     if (!newClient.firstName || !newClient.lastName || !newClient.startDate) {
       showToast('First name, last name, and start date are required.', 'error'); return;
     }
     try {
       const numericFields = ['weight','height','bodyFat','muscleMass','neck','shoulders','chest','waist','hips','leftArm','rightArm','leftForearm','rightForearm','leftThigh','rightThigh','leftCalf','rightCalf'];
-      const payload = { firstName: newClient.firstName, lastName: newClient.lastName, email: newClient.email || undefined, number: newClient.number || undefined, startDate: newClient.startDate, goalType: newClient.goalType, notes: newClient.notes || undefined };
+      const payload = { firstName: newClient.firstName, lastName: newClient.lastName, email: newClient.email || undefined, number: newClient.number || undefined, startDate: newClient.startDate, goalType: newClient.goalType, notes: newClient.notes || undefined, ...extra };
       numericFields.forEach(f => { if (newClient[f] !== '' && newClient[f] != null) payload[f] = parseFloat(newClient[f]); });
       const data = await api.post('/api/client/clients', payload);
       showToast('Client added!', 'success');
@@ -227,11 +227,12 @@ const Dashboard = () => {
     } catch (err) { showToast(err.message, 'error'); }
   };
 
-  const handleAddMeasurement = async () => {
+  const handleAddMeasurement = async (photos) => {
     if (!selectedClient) return;
     try {
       const numericFields = ['weight','height','bodyFat','muscleMass','neck','shoulders','chest','waist','hips','leftArm','rightArm','leftForearm','rightForearm','leftThigh','rightThigh','leftCalf','rightCalf'];
       const payload = { date: newMeasurement.date, notes: newMeasurement.notes };
+      if (photos) payload.photos = photos;
       numericFields.forEach(f => { if (newMeasurement[f] !== '' && newMeasurement[f] != null) payload[f] = parseFloat(newMeasurement[f]); });
       if (editingMeasurement) {
         await api.put(`/api/client/clients/${selectedClient._id}/measurements/${editingMeasurement._id}`, payload);
@@ -286,18 +287,21 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e0e0e] flex flex-col">
+    <div className="min-h-screen bg-[#0e0e0e] flex flex-col pb-16 md:pb-0">
       <Navbar />
       <main className="flex flex-1 overflow-hidden">
-        <Sidebar
-          clients={filteredClients}
-          selectedClient={view === 'client' ? selectedClient : null}
-          onSelectClient={handleSelectClient}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onAddClient={() => setIsAddModalOpen(true)}
-          onShowDashboard={() => { setView('smart'); setSelectedClient(null); }}
-        />
+        {/* Sidebar: hidden on mobile */}
+        <div className="hidden md:flex">
+          <Sidebar
+            clients={filteredClients}
+            selectedClient={view === 'client' ? selectedClient : null}
+            onSelectClient={handleSelectClient}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onAddClient={() => setIsAddModalOpen(true)}
+            onShowDashboard={() => { setView('smart'); setSelectedClient(null); }}
+          />
+        </div>
 
         {view === 'smart' ? (
           <SmartDashboard

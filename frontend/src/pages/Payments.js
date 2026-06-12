@@ -117,9 +117,9 @@ const Payments = () => {
   const expiringSoon = subscriptions.filter(s => s.status === 'active' && daysUntil(s.endDate) <= 7 && daysUntil(s.endDate) >= 0);
 
   return (
-    <div className="min-h-screen bg-[#0e0e0e] flex flex-col">
+    <div className="min-h-screen bg-[#0e0e0e] flex flex-col pb-16 md:pb-0">
       <Navbar />
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
