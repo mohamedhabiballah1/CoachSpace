@@ -146,6 +146,7 @@ const createClient = async (req, res) => {
             startDate: data.startDate,
             goalType: data.goalType,
             notes: data.notes,
+            profileImage: data.profileImage,
             user: req.user._id,
         });
         await client.save();
@@ -180,6 +181,7 @@ const createClient = async (req, res) => {
                 rightThigh: data.rightThigh || null,
                 leftCalf: data.leftCalf || null,
                 rightCalf: data.rightCalf || null,
+                photos: data.photos || [],
             });
             await measurement.save();
         }
@@ -255,6 +257,7 @@ const addMeasurement = async (req, res) => {
         const measurement = new Measurement({
             coach: req.user._id,
             client: clientId,
+            date: data.date,
             weight: data.weight,
             height: data.height,
             bodyFat: data.bodyFat,
@@ -271,7 +274,9 @@ const addMeasurement = async (req, res) => {
             leftThigh: data.leftThigh,
             rightThigh: data.rightThigh,
             leftCalf: data.leftCalf,
-            rightCalf: data.rightCalf
+            rightCalf: data.rightCalf,
+            notes: data.notes,
+            photos: data.photos || [],
         });
 
         await measurement.save();
@@ -319,7 +324,9 @@ const updateMeasurement = async (req, res) => {
         measurement.rightThigh = data.rightThigh != null ? data.rightThigh : measurement.rightThigh;
         measurement.leftCalf = data.leftCalf != null ? data.leftCalf : measurement.leftCalf;
         measurement.rightCalf = data.rightCalf != null ? data.rightCalf : measurement.rightCalf;
-        
+        if (data.notes !== undefined) measurement.notes = data.notes;
+        if (data.photos !== undefined) measurement.photos = data.photos;
+
         await measurement.save();
         res.status(200).json({
             message: 'Measurement updated successfully',

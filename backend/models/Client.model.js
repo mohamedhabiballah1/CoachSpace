@@ -48,6 +48,10 @@ const clientSchema = new mongoose.Schema({
     medications: { type: String, trim: true },
     otherNotes: { type: String, trim: true },
   },
+  profileImage: {
+    type: String,
+    trim: true,
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
