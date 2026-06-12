@@ -65,6 +65,12 @@ const measurementSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  photos: [
+    {
+      url: { type: String, required: true },
+      angle: { type: String, enum: ['front', 'side', 'back'], required: true },
+    },
+  ],
   coach: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

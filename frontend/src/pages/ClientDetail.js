@@ -39,10 +39,11 @@ const ClientDetail = () => {
 
   useEffect(() => { fetchClient(); }, [fetchClient]);
 
-  const handleAddMeasurement = async () => {
+  const handleAddMeasurement = async (photos) => {
     try {
       const numericFields = ['weight','height','bodyFat','muscleMass','neck','shoulders','chest','waist','hips','leftArm','rightArm','leftForearm','rightForearm','leftThigh','rightThigh','leftCalf','rightCalf'];
       const payload = { date: newMeasurement.date, notes: newMeasurement.notes };
+      if (photos) payload.photos = photos;
       numericFields.forEach(f => { if (newMeasurement[f] !== '' && newMeasurement[f] != null) payload[f] = parseFloat(newMeasurement[f]); });
 
       if (editingM) {
@@ -117,7 +118,7 @@ const ClientDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e0e0e] flex flex-col">
+    <div className="min-h-screen bg-[#0e0e0e] flex flex-col pb-16 md:pb-0">
       <Navbar />
       {/* Breadcrumb */}
       <div className="px-6 py-3 border-b border-[#2a2a2a] flex items-center gap-2">
