@@ -24,10 +24,16 @@ const emptyPayForm = () => ({
 });
 
 const Modal = ({ title, onClose, children }) => (
-  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000]" onClick={onClose}>
-    <div className="bg-[#161616] border border-[#383838] rounded-[6px] p-8 w-[480px] max-w-[95vw] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-      <h2 className="font-['Bebas_Neue'] text-[28px] text-[#f0ede6] mb-6">{title}</h2>
-      {children}
+  <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-[1000]" onClick={onClose}>
+    <div className="bg-[#161616] border border-[#383838] rounded-t-[12px] sm:rounded-[6px] w-full sm:w-[480px] sm:max-w-[95vw] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="sm:hidden flex justify-center pt-3 pb-1"><div className="w-10 h-1 bg-[#383838] rounded-full" /></div>
+      <div className="p-6 sm:p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-['Bebas_Neue'] text-[24px] sm:text-[28px] text-[#f0ede6]">{title}</h2>
+          <button onClick={onClose} className="sm:hidden text-[#555] text-[24px] leading-none">×</button>
+        </div>
+        {children}
+      </div>
     </div>
   </div>
 );

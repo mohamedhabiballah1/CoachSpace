@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AlertTriangle } from 'lucide-react';
 import { api } from '../api';
 import { useToast } from '../context/ToastContext';
 import Navbar from '../components/Navbar';
@@ -216,9 +217,9 @@ const Clients = () => {
                 >
                   <ClientAvatar client={c} size={12} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-[14px] font-medium text-[#f0ede6] font-['DM_Sans'] truncate">
+                    <div className="text-[14px] font-medium text-[#f0ede6] font-['DM_Sans'] truncate flex items-center gap-1">
                       {c.firstName} {c.lastName}
-                      {c.medicalNotes && <span className="ml-2 text-[12px]">⚠️</span>}
+                      {c.medicalNotes && <AlertTriangle size={14} className="text-[#f5a35b] flex-shrink-0" />}
                     </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className={`font-['DM_Mono'] text-[10px] uppercase border px-1.5 py-0.5 rounded-full ${GOAL_COLORS[c.goalType] || 'text-[#555] border-[#383838]'}`}>
@@ -258,9 +259,9 @@ const Clients = () => {
                         <div className="flex items-center gap-3">
                           <ClientAvatar client={c} size={8} />
                           <div>
-                            <div className="text-[13px] font-medium text-[#f0ede6] font-['DM_Sans']">
+                            <div className="text-[13px] font-medium text-[#f0ede6] font-['DM_Sans'] flex items-center gap-1">
                               {c.firstName} {c.lastName}
-                              {c.medicalNotes && <span className="ml-2 text-[12px]" title="Medical notes">⚠️</span>}
+                              {c.medicalNotes && <AlertTriangle size={13} className="text-[#f5a35b]" title="Medical notes" />}
                             </div>
                             {c.email && <div className="text-[11px] text-[#555] font-['DM_Mono']">{c.email}</div>}
                           </div>

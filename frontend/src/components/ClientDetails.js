@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Camera, Dumbbell, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { api } from '../api';
 import { useToast } from '../context/ToastContext';
 import ProgressCharts from './ProgressCharts';
@@ -51,9 +52,9 @@ const historyColumns = [
 ];
 
 const directionIcon = (dir) => {
-  if (dir === 'positive') return <span className="text-[#c8f135]">↑</span>;
-  if (dir === 'negative') return <span className="text-[#e85d4a]">↓</span>;
-  return <span className="text-[#555]">→</span>;
+  if (dir === 'positive') return <TrendingUp size={14} className="text-[#c8f135] inline" />;
+  if (dir === 'negative') return <TrendingDown size={14} className="text-[#e85d4a] inline" />;
+  return <Minus size={14} className="text-[#555] inline" />;
 };
 
 const TABS = ['Overview', 'Charts', 'Health', 'Nutrition', 'Photos', 'Exercises'];
@@ -215,7 +216,7 @@ const ClientDetails = ({ client, onAddMeasurement, onEditMeasurement, onDeleteMe
                   {client.firstName} {client.lastName}
                 </h1>
                 {client.medicalNotes && (
-                  <span title="Has medical notes" className="text-[16px]">⚠️</span>
+                  <AlertTriangle size={16} className="text-[#f5a35b]" title="Has medical notes" />
                 )}
                 <WhatsAppButton client={client} size="sm" />
               </div>
@@ -431,7 +432,7 @@ const ClientDetails = ({ client, onAddMeasurement, onEditMeasurement, onDeleteMe
           <>
             {photoTimeline.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 gap-3">
-                <span className="text-[40px]">📷</span>
+                <Camera size={40} className="text-[#383838]" />
                 <p className="text-[#555] text-[13px] font-['DM_Sans']">No progress photos yet. Add photos during a check-in.</p>
               </div>
             ) : (
@@ -478,7 +479,7 @@ const ClientDetails = ({ client, onAddMeasurement, onEditMeasurement, onDeleteMe
               </div>
             ) : clientExercises.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 gap-3">
-                <span className="text-[40px]">🏋️</span>
+                <Dumbbell size={40} className="text-[#383838]" />
                 <p className="text-[#555] text-[13px] font-['DM_Sans']">No exercises assigned yet. Use the Workouts page to assign exercises to this client.</p>
               </div>
             ) : (

@@ -183,7 +183,7 @@ const Schedule = () => {
                               <button onClick={e => { e.stopPropagation(); handleStatus(s._id, 'no-show'); }} title="No show" className="text-[10px] text-[#f5a35b] hover:opacity-80">✗</button>
                             </>
                           )}
-                          <button onClick={e => { e.stopPropagation(); handleDelete(s._id); }} title="Delete" className="text-[10px] text-[#e85d4a] hover:opacity-80">🗑</button>
+                          <button onClick={e => { e.stopPropagation(); handleDelete(s._id); }} title="Delete" className="text-[10px] text-[#e85d4a] hover:opacity-80">×</button>
                         </div>
                       </div>
                     </div>
@@ -247,9 +247,14 @@ const Schedule = () => {
 
       {/* Add/Edit Modal */}
       {modal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000]" onClick={() => setModal(false)}>
-          <div className="bg-[#161616] border border-[#383838] rounded-[6px] p-8 w-[440px] max-w-[95vw]" onClick={e => e.stopPropagation()}>
-            <h2 className="font-['Bebas_Neue'] text-[28px] text-[#f0ede6] mb-6">{editingId ? 'EDIT SESSION' : 'ADD SESSION'}</h2>
+        <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-[1000]" onClick={() => setModal(false)}>
+          <div className="bg-[#161616] border border-[#383838] rounded-t-[12px] sm:rounded-[6px] w-full sm:w-[440px] sm:max-w-[95vw] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sm:hidden flex justify-center pt-3 pb-1"><div className="w-10 h-1 bg-[#383838] rounded-full" /></div>
+            <div className="p-6 sm:p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-['Bebas_Neue'] text-[24px] sm:text-[28px] text-[#f0ede6]">{editingId ? 'EDIT SESSION' : 'ADD SESSION'}</h2>
+              <button onClick={() => setModal(false)} className="sm:hidden text-[#555] text-[24px] leading-none">×</button>
+            </div>
             <div className="space-y-4">
               <div>
                 <label className={labelClass}>Client *</label>
@@ -286,9 +291,10 @@ const Schedule = () => {
                 <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} className={`${inputClass} resize-none`} />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button onClick={() => setModal(false)} className="font-['DM_Sans'] text-[13px] px-4 py-2 rounded-[4px] border border-[#383838] text-[#888] hover:text-[#f0ede6] transition-colors">Cancel</button>
-                <button onClick={handleSave} className="font-['DM_Sans'] text-[13px] font-medium px-4 py-2 rounded-[4px] bg-[#c8f135] text-[#0e0e0e] hover:opacity-90 transition-opacity">Save</button>
+                <button onClick={() => setModal(false)} className="font-['DM_Sans'] text-[13px] px-4 py-2 rounded-[4px] border border-[#383838] text-[#888] hover:text-[#f0ede6] transition-colors min-h-[44px]">Cancel</button>
+                <button onClick={handleSave} className="font-['DM_Sans'] text-[13px] font-medium px-4 py-2 rounded-[4px] bg-[#c8f135] text-[#0e0e0e] hover:opacity-90 transition-opacity min-h-[44px]">Save</button>
               </div>
+            </div>
             </div>
           </div>
         </div>
