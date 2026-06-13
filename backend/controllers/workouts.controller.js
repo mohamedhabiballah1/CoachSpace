@@ -65,13 +65,29 @@ exports.deletePlan = async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
 
-// Assign plan to client
+// Assign plan to one or more clients
 exports.assignPlan = async (req, res) => {
   try {
-    await ClientPlan.updateMany({ client: req.body.clientId, coach: req.user._id, status: 'active' }, { status: 'completed' });
-    const cp = new ClientPlan({ client: req.body.clientId, coach: req.user._id, plan: req.body.planId, startDate: req.body.startDate || Date.now(), endDate: req.body.endDate });
-    await cp.save();
-    res.status(201).json({ success: true, clientPlan: cp });
+    const { planId, clientId, clientIds, startDate, endDate } = req.body;
+    const targets = clientIds && clientIds.length ? clientIds : (clientId ? [clientId] : []);
+    if (!targets.length) return res.status(400).json({ success: false, message: 'No clients specified' });
+
+    const created = [];
+    for (const cId of targets) {
+      await ClientPlan.updateMany({ client: cId, coach: req.user._id, status: 'active' }, { status: 'completed' });
+      const cp = new ClientPlan({ client: cId, coach: req.user._id, plan: planId, startDate: startDate || Date.now(), endDate: endDate || undefined });
+      await cp.save();
+      created.push(cp);
+    }
+    res.status(201).json({ success: true, assigned: created.length, clients: targets });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+};
+
+// Count active clients on a plan
+exports.getPlanClientCount = async (req, res) => {
+  try {
+    const count = await ClientPlan.countDocuments({ plan: req.params.planId, coach: req.user._id, status: 'active' });
+    res.json({ success: true, count });
   } catch (e) { res.status(500).json({ success: false, message: e.message }); }
 };
 

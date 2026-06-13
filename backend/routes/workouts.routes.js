@@ -15,6 +15,7 @@ router.delete('/plans/:id',         auth, ctrl.deletePlan);
 
 router.post('/assign',                              auth, ctrl.assignPlan);
 router.get('/client/:clientId',                     auth, ctrl.getClientPlan);
+router.get('/plans/:planId/client-count',           auth, ctrl.getPlanClientCount);
 
 router.post('/exercises/:exerciseId/assign',        auth, ctrl.assignExerciseToClients);
 router.get('/clients/:clientId/exercises',          auth, ctrl.getClientExercises);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Camera, Video, Search, Plus, X } from 'lucide-react';
 import { api } from '../api';
 import { useToast } from '../context/ToastContext';
 import { uploadFile } from '../utils/upload';
@@ -26,25 +27,25 @@ const ExerciseMediaSection = ({ mediaType, setMediaType, imagePreviews, onImageS
 
   return (
     <div className="mt-4">
-      <div className="font-['DM_Mono'] text-[10px] uppercase tracking-[0.1em] text-[#555] mb-3">Media</div>
+      <div className={labelClass}>Media</div>
       <div className="flex gap-2 mb-3">
         <button
           type="button"
           onClick={() => setMediaType('images')}
-          className={`font-['DM_Sans'] text-[12px] px-3 py-1.5 rounded-[4px] border transition-colors min-h-[36px] ${
+          className={`flex items-center gap-1.5 font-['DM_Sans'] text-[12px] px-3 py-1.5 rounded-[4px] border transition-colors min-h-[36px] ${
             mediaType === 'images' ? 'bg-[rgba(200,241,53,0.1)] text-[#c8f135] border-[#c8f135]' : 'border-[#383838] text-[#555] hover:text-[#888]'
           }`}
         >
-          📷 Images
+          <Camera size={14} /> Images
         </button>
         <button
           type="button"
           onClick={() => setMediaType('video')}
-          className={`font-['DM_Sans'] text-[12px] px-3 py-1.5 rounded-[4px] border transition-colors min-h-[36px] ${
+          className={`flex items-center gap-1.5 font-['DM_Sans'] text-[12px] px-3 py-1.5 rounded-[4px] border transition-colors min-h-[36px] ${
             mediaType === 'video' ? 'bg-[rgba(200,241,53,0.1)] text-[#c8f135] border-[#c8f135]' : 'border-[#383838] text-[#555] hover:text-[#888]'
           }`}
         >
-          🎥 Video
+          <Video size={14} /> Video
         </button>
       </div>
 
@@ -85,12 +86,112 @@ const ExerciseMediaSection = ({ mediaType, setMediaType, imagePreviews, onImageS
               onClick={() => videoRef.current?.click()}
               className="border-2 border-dashed border-[#2a2a2a] rounded-[4px] p-6 text-center cursor-pointer hover:border-[#555] transition-colors"
             >
-              <div className="text-[32px] mb-2">🎥</div>
+              <div className="flex justify-center mb-2"><Video size={32} className="text-[#383838]" /></div>
               <p className="font-['DM_Sans'] text-[12px] text-[#555]">Click to upload video</p>
               <p className="font-['DM_Mono'] text-[10px] text-[#383838] mt-1">MP4 / MOV · Max 50MB</p>
             </div>
           )}
           <input ref={videoRef} type="file" accept="video/mp4,video/quicktime" className="hidden" onChange={e => onVideoSelect(e.target.files[0])} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Exercise picker component for plan builder
+const ExercisePicker = ({ exercises, onSelect, onCreateNew }) => {
+  const [search, setSearch] = useState('');
+  const [muscleFilter, setMuscleFilter] = useState('All');
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtered = exercises.filter(ex => {
+    const matchSearch = ex.name.toLowerCase().includes(search.toLowerCase()) ||
+      (ex.muscleGroup || '').toLowerCase().includes(search.toLowerCase());
+    const matchMuscle = muscleFilter === 'All' || ex.muscleGroup === muscleFilter;
+    return matchSearch && matchMuscle;
+  });
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 font-['DM_Sans'] text-[12px] px-3 py-1.5 rounded-[4px] bg-[rgba(200,241,53,0.08)] text-[#c8f135] border border-[#c8f135] hover:bg-[rgba(200,241,53,0.15)] transition-colors min-h-[36px]"
+      >
+        <Plus size={14} /> Add from Library
+      </button>
+
+      {open && (
+        <div className="absolute z-[300] top-full left-0 mt-1 w-[300px] bg-[#1a1a1a] border border-[#383838] rounded-[6px] shadow-2xl overflow-hidden">
+          <div className="p-3 border-b border-[#2a2a2a]">
+            <div className="relative mb-2">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#555]" />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search exercises..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full bg-[#1f1f1f] border border-[#383838] text-[#f0ede6] text-[12px] pl-8 pr-3 py-1.5 rounded-[4px] outline-none focus:border-[#c8f135] font-['DM_Sans']"
+              />
+            </div>
+            <div className="flex gap-1 flex-wrap">
+              {['All', ...MUSCLE_GROUPS].map(mg => (
+                <button
+                  key={mg}
+                  type="button"
+                  onClick={() => setMuscleFilter(mg)}
+                  className={`font-['DM_Mono'] text-[9px] uppercase px-2 py-0.5 rounded-full border transition-colors ${
+                    muscleFilter === mg ? 'bg-[rgba(200,241,53,0.1)] text-[#c8f135] border-[#c8f135]' : 'border-[#383838] text-[#555] hover:text-[#888]'
+                  }`}
+                >
+                  {mg}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="max-h-56 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <p className="text-[#555] text-[12px] font-['DM_Sans'] p-3">No exercises found.</p>
+            ) : filtered.map(ex => (
+              <button
+                key={ex._id}
+                type="button"
+                onClick={() => { onSelect(ex); setOpen(false); setSearch(''); setMuscleFilter('All'); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#2a2a2a] text-left transition-colors border-b border-[#1f1f1f]"
+              >
+                {ex.images?.[0] ? (
+                  <img src={ex.images[0]} alt={ex.name} className="w-8 h-8 rounded-[3px] object-cover flex-shrink-0 border border-[#383838]" />
+                ) : (
+                  <div className="w-8 h-8 rounded-[3px] bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                    <Search size={12} className="text-[#555]" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-['DM_Sans'] text-[13px] text-[#f0ede6] truncate">{ex.name}</div>
+                  {ex.muscleGroup && <div className="font-['DM_Mono'] text-[10px] text-[#c8f135] uppercase">{ex.muscleGroup}</div>}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="p-2 border-t border-[#2a2a2a]">
+            <button
+              type="button"
+              onClick={() => { onCreateNew(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-2 font-['DM_Sans'] text-[12px] text-[#555] hover:text-[#c8f135] transition-colors rounded-[4px] hover:bg-[#2a2a2a]"
+            >
+              <Plus size={13} /> Create new exercise
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -107,16 +208,20 @@ const Workouts = () => {
   const [activeTab, setActiveTab] = useState('Plans');
   const [planModal, setPlanModal] = useState(false);
   const [exModal, setExModal]     = useState(false);
-  const [assignModal, setAssignModal] = useState(null); // plan to assign
-  const [assignExModal, setAssignExModal] = useState(null); // exercise to assign to clients
+  const [quickAddModal, setQuickAddModal] = useState(false); // inline quick-add from plan builder
+  const [quickAddContext, setQuickAddContext] = useState(null); // { wi, di } to auto-add after creation
+  const [assignModal, setAssignModal] = useState(null);
+  const [assignExModal, setAssignExModal] = useState(null);
   const [editPlan, setEditPlan]   = useState(null);
   const [planForm, setPlanForm]   = useState(emptyPlan());
   const [exForm, setExForm]       = useState({ name:'', muscleGroup:'Chest', description:'' });
-  const [assignForm, setAssignForm] = useState({ clientId:'', startDate: new Date().toISOString().slice(0,10) });
+  const [assignForm, setAssignForm] = useState({ clientIds: [], startDate: new Date().toISOString().slice(0,10), endDate: '' });
   const [assignExForm, setAssignExForm] = useState({ clientIds: [], notes: '' });
   const [clientSearch, setClientSearch] = useState('');
+  const [assignClientSearch, setAssignClientSearch] = useState('');
   const [savingEx, setSavingEx] = useState(false);
   const [assigningSaving, setAssigningSaving] = useState(false);
+  const [planClientCounts, setPlanClientCounts] = useState({});
 
   // Exercise media state
   const [exMediaType, setExMediaType] = useState('images');
@@ -136,6 +241,16 @@ const Workouts = () => {
       setPlans(plansData.plans || []);
       setExercises(exData.exercises || []);
       setClients(clientsData.clients || clientsData);
+
+      // Fetch client counts per plan
+      const counts = {};
+      await Promise.all((plansData.plans || []).map(async plan => {
+        try {
+          const data = await api.get(`/api/workouts/plans/${plan._id}/client-count`);
+          counts[plan._id] = data.count || 0;
+        } catch { counts[plan._id] = 0; }
+      }));
+      setPlanClientCounts(counts);
     } catch (err) { showToast(err.message, 'error'); }
     finally { setLoading(false); }
   }, [showToast]);
@@ -164,7 +279,23 @@ const Workouts = () => {
     setF('weeks', weeks);
   };
 
-  const addExerciseToDay = (wi, di) => {
+  // Add exercise from library to a day
+  const addExerciseFromLibrary = (wi, di, exercise) => {
+    const weeks = [...planForm.weeks];
+    weeks[wi].days[di].exercises.push({
+      exerciseId: exercise._id,
+      name: exercise.name,
+      muscleGroup: exercise.muscleGroup,
+      thumbnail: exercise.images?.[0] || null,
+      sets: 3,
+      reps: '10',
+      restSeconds: 60,
+      notes: '',
+    });
+    setF('weeks', weeks);
+  };
+
+  const addBlankExerciseToDay = (wi, di) => {
     const weeks = [...planForm.weeks];
     weeks[wi].days[di].exercises.push({ name: '', sets: 3, reps: '10', restSeconds: 60, notes: '' });
     setF('weeks', weeks);
@@ -246,7 +377,7 @@ const Workouts = () => {
     setExVideoPreview(null);
   };
 
-  const handleSaveExercise = async () => {
+  const handleSaveExercise = async (isQuickAdd = false, context = null) => {
     if (!exForm.name) { showToast('Exercise name is required.', 'error'); return; }
     setSavingEx(true);
     try {
@@ -266,9 +397,19 @@ const Workouts = () => {
         payload.video = videoUrl;
       }
 
-      await api.post('/api/workouts/exercises', payload);
+      const res = await api.post('/api/workouts/exercises', payload);
       showToast('Exercise added to library!', 'success');
-      setExModal(false); resetExForm(); fetchAll();
+
+      // If called from plan builder quick-add, auto-add to day
+      if (isQuickAdd && context && res.exercise) {
+        addExerciseFromLibrary(context.wi, context.di, res.exercise);
+      }
+
+      setQuickAddModal(false);
+      setExModal(false);
+      resetExForm();
+      setQuickAddContext(null);
+      fetchAll();
     } catch (err) { showToast(err.message, 'error'); }
     finally { setSavingEx(false); }
   };
@@ -278,12 +419,31 @@ const Workouts = () => {
     catch (err) { showToast(err.message, 'error'); }
   };
 
+  // Multi-client assign plan
   const handleAssign = async () => {
-    if (!assignForm.clientId) { showToast('Select a client.', 'error'); return; }
+    if (!assignForm.clientIds.length) { showToast('Select at least one client.', 'error'); return; }
     try {
-      await api.post('/api/workouts/assign', { clientId: assignForm.clientId, planId: assignModal._id, startDate: assignForm.startDate });
-      showToast('Plan assigned!', 'success'); setAssignModal(null);
+      const res = await api.post('/api/workouts/assign', {
+        planId: assignModal._id,
+        clientIds: assignForm.clientIds,
+        startDate: assignForm.startDate,
+        endDate: assignForm.endDate || undefined,
+      });
+      showToast(`Plan assigned to ${res.assigned} client${res.assigned !== 1 ? 's' : ''}!`, 'success');
+      setAssignModal(null);
+      setAssignForm({ clientIds: [], startDate: new Date().toISOString().slice(0,10), endDate: '' });
+      setAssignClientSearch('');
+      fetchAll();
     } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const toggleAssignClient = (clientId) => {
+    setAssignForm(prev => ({
+      ...prev,
+      clientIds: prev.clientIds.includes(clientId)
+        ? prev.clientIds.filter(id => id !== clientId)
+        : [...prev.clientIds, clientId],
+    }));
   };
 
   const handleAssignExercise = async () => {
@@ -310,6 +470,10 @@ const Workouts = () => {
 
   const filteredClients = clients.filter(c =>
     `${c.firstName} ${c.lastName}`.toLowerCase().includes(clientSearch.toLowerCase())
+  );
+
+  const filteredAssignClients = clients.filter(c =>
+    `${c.firstName} ${c.lastName}`.toLowerCase().includes(assignClientSearch.toLowerCase())
   );
 
   return (
@@ -359,8 +523,15 @@ const Workouts = () => {
               {plans.map(plan => (
                 <div key={plan._id} className="bg-[#161616] border border-[#2a2a2a] rounded-[4px] p-5 hover:border-[#383838] transition-colors">
                   <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-['Bebas_Neue'] text-[22px] text-[#f0ede6]">{plan.name}</h3>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-['Bebas_Neue'] text-[22px] text-[#f0ede6]">{plan.name}</h3>
+                        {planClientCounts[plan._id] > 0 && (
+                          <span className="font-['DM_Mono'] text-[10px] bg-[rgba(200,241,53,0.1)] text-[#c8f135] border border-[#c8f135] px-2 py-0.5 rounded-full">
+                            {planClientCounts[plan._id]} client{planClientCounts[plan._id] !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
                       <span className="font-['DM_Mono'] text-[10px] uppercase text-[#c8f135]">{GOAL_LABELS[plan.goalType]}</span>
                     </div>
                   </div>
@@ -369,7 +540,11 @@ const Workouts = () => {
                     {plan.weeks?.length || 0} week{plan.weeks?.length !== 1 ? 's' : ''}
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => setAssignModal(plan)}
+                    <button onClick={() => {
+                      setAssignModal(plan);
+                      setAssignForm({ clientIds: [], startDate: new Date().toISOString().slice(0,10), endDate: '' });
+                      setAssignClientSearch('');
+                    }}
                       className="font-['DM_Sans'] text-[12px] px-3 py-1.5 rounded-[4px] bg-[rgba(200,241,53,0.1)] text-[#c8f135] border border-[#c8f135] hover:bg-[rgba(200,241,53,0.2)] transition-colors min-h-[36px]">
                       Assign
                     </button>
@@ -401,8 +576,8 @@ const Workouts = () => {
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className="font-['DM_Sans'] text-[14px] font-medium text-[#f0ede6]">{ex.name}</span>
                         {ex.muscleGroup && <span className="font-['DM_Mono'] text-[10px] uppercase text-[#c8f135] tracking-wide">{ex.muscleGroup}</span>}
-                        {ex.images?.length > 0 && <span className="font-['DM_Mono'] text-[10px] text-[#555]">📷 {ex.images.length}</span>}
-                        {ex.video && <span className="font-['DM_Mono'] text-[10px] text-[#555]">🎥</span>}
+                        {ex.images?.length > 0 && <span className="font-['DM_Mono'] text-[10px] text-[#555] flex items-center gap-1"><Camera size={12} /> {ex.images.length}</span>}
+                        {ex.video && <span className="font-['DM_Mono'] text-[10px] text-[#555] flex items-center gap-1"><Video size={12} /></span>}
                       </div>
                       {ex.description && <p className="text-[12px] text-[#555] mt-1 font-['DM_Sans']">{ex.description}</p>}
                     </div>
@@ -416,7 +591,6 @@ const Workouts = () => {
                       <button onClick={() => handleDeleteExercise(ex._id)} className="font-['DM_Sans'] text-[11px] sm:text-[12px] px-2 sm:px-3 py-1.5 rounded-[4px] text-[#e85d4a] border border-[#e85d4a] hover:bg-[rgba(232,93,74,0.08)] transition-colors min-h-[36px]">Del</button>
                     </div>
                   </div>
-                  {/* Exercise images */}
                   {ex.images?.length > 0 && (
                     <div className="flex gap-2 mt-3 overflow-x-auto">
                       {ex.images.map((url, i) => (
@@ -474,17 +648,71 @@ const Workouts = () => {
                       <div className="flex items-center gap-2 mb-3">
                         <input type="text" value={day.dayName} onChange={e => setDayName(wi, di, e.target.value)}
                           className="bg-transparent border-b border-[#383838] text-[#f0ede6] font-['Bebas_Neue'] text-[16px] outline-none focus:border-[#c8f135] flex-1 min-h-[36px]" />
-                        <button onClick={() => removeDay(wi, di)} className="text-[#555] hover:text-[#e85d4a] text-[16px] w-8 h-8 flex items-center justify-center">✕</button>
+                        <button onClick={() => removeDay(wi, di)} className="text-[#555] hover:text-[#e85d4a] text-[16px] w-8 h-8 flex items-center justify-center">
+                          <X size={16} />
+                        </button>
                       </div>
+
+                      {/* Exercises in day */}
                       {day.exercises.map((ex, ei) => (
-                        <div key={ei} className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-2 items-center">
-                          <input type="text" value={ex.name} onChange={e => setExField(wi,di,ei,'name',e.target.value)} placeholder="Exercise name" className={`${inputClass} col-span-2 sm:col-span-2`} />
-                          <input type="number" value={ex.sets} onChange={e => setExField(wi,di,ei,'sets',e.target.value)} placeholder="Sets" className={inputClass} />
-                          <input type="text" value={ex.reps} onChange={e => setExField(wi,di,ei,'reps',e.target.value)} placeholder="Reps" className={inputClass} />
-                          <button onClick={() => removeExercise(wi,di,ei)} className="text-[#555] hover:text-[#e85d4a] text-[16px] w-8 h-8 flex items-center justify-center">✕</button>
+                        <div key={ei} className="bg-[#161616] border border-[#2a2a2a] rounded-[4px] p-2 mb-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            {ex.thumbnail && (
+                              <img src={ex.thumbnail} alt={ex.name} className="w-8 h-8 rounded-[3px] object-cover flex-shrink-0 border border-[#383838]" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <input
+                                type="text"
+                                value={ex.name}
+                                onChange={e => setExField(wi,di,ei,'name',e.target.value)}
+                                placeholder="Exercise name"
+                                className="w-full bg-transparent text-[#f0ede6] font-['DM_Sans'] text-[13px] outline-none border-b border-[#383838] focus:border-[#c8f135] pb-0.5"
+                              />
+                              {ex.muscleGroup && (
+                                <span className="font-['DM_Mono'] text-[10px] text-[#c8f135] uppercase">{ex.muscleGroup}</span>
+                              )}
+                            </div>
+                            <button onClick={() => removeExercise(wi,di,ei)} className="text-[#555] hover:text-[#e85d4a] flex-shrink-0">
+                              <X size={14} />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="font-['DM_Mono'] text-[9px] uppercase text-[#555] block mb-0.5">Sets</label>
+                              <input type="number" value={ex.sets} onChange={e => setExField(wi,di,ei,'sets',e.target.value)}
+                                className="w-full bg-[#1a1a1a] border border-[#383838] text-[#f0ede6] text-[12px] px-2 py-1 rounded-[3px] outline-none focus:border-[#c8f135]" />
+                            </div>
+                            <div>
+                              <label className="font-['DM_Mono'] text-[9px] uppercase text-[#555] block mb-0.5">Reps</label>
+                              <input type="text" value={ex.reps} onChange={e => setExField(wi,di,ei,'reps',e.target.value)}
+                                className="w-full bg-[#1a1a1a] border border-[#383838] text-[#f0ede6] text-[12px] px-2 py-1 rounded-[3px] outline-none focus:border-[#c8f135]" />
+                            </div>
+                            <div>
+                              <label className="font-['DM_Mono'] text-[9px] uppercase text-[#555] block mb-0.5">Rest (s)</label>
+                              <input type="number" value={ex.restSeconds} onChange={e => setExField(wi,di,ei,'restSeconds',e.target.value)}
+                                className="w-full bg-[#1a1a1a] border border-[#383838] text-[#f0ede6] text-[12px] px-2 py-1 rounded-[3px] outline-none focus:border-[#c8f135]" />
+                            </div>
+                          </div>
                         </div>
                       ))}
-                      <button onClick={() => addExerciseToDay(wi,di)} className="font-['DM_Sans'] text-[11px] text-[#555] hover:text-[#c8f135] mt-1 min-h-[36px]">+ Add exercise</button>
+
+                      <div className="flex items-center gap-2 mt-2">
+                        <ExercisePicker
+                          exercises={exercises}
+                          onSelect={(ex) => addExerciseFromLibrary(wi, di, ex)}
+                          onCreateNew={() => {
+                            setQuickAddContext({ wi, di });
+                            resetExForm();
+                            setQuickAddModal(true);
+                          }}
+                        />
+                        <button
+                          onClick={() => addBlankExerciseToDay(wi, di)}
+                          className="font-['DM_Sans'] text-[11px] text-[#555] hover:text-[#888] min-h-[36px] transition-colors"
+                        >
+                          + Manual
+                        </button>
+                      </div>
                     </div>
                   ))}
                   <button onClick={() => addDay(wi)} className="font-['DM_Sans'] text-[12px] text-[#555] hover:text-[#c8f135] transition-colors min-h-[36px]">+ Add Day</button>
@@ -495,6 +723,54 @@ const Workouts = () => {
               <div className="flex justify-end gap-2">
                 <button onClick={() => setPlanModal(false)} className="font-['DM_Sans'] text-[13px] px-4 py-2.5 rounded-[4px] border border-[#383838] text-[#888] hover:text-[#f0ede6] transition-colors min-h-[44px]">Cancel</button>
                 <button onClick={handleSavePlan} className="font-['DM_Sans'] text-[13px] font-medium px-4 py-2.5 rounded-[4px] bg-[#c8f135] text-[#0e0e0e] hover:opacity-90 transition-opacity min-h-[44px]">Save Plan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick-add exercise from plan builder */}
+      {quickAddModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-[1100]" onClick={() => { setQuickAddModal(false); resetExForm(); setQuickAddContext(null); }}>
+          <div className="bg-[#161616] border border-[#383838] rounded-t-[12px] sm:rounded-[6px] w-full sm:w-[480px] sm:max-w-[95vw] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sm:hidden flex justify-center pt-3 pb-1"><div className="w-10 h-1 bg-[#383838] rounded-full" /></div>
+            <div className="p-6 sm:p-8">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-['Bebas_Neue'] text-[24px] text-[#f0ede6]">QUICK ADD EXERCISE</h2>
+                <button onClick={() => { setQuickAddModal(false); resetExForm(); setQuickAddContext(null); }} className="sm:hidden text-[#555] text-[24px] leading-none">×</button>
+              </div>
+              <p className="font-['DM_Sans'] text-[12px] text-[#555] mb-5">This exercise will be added to your library and auto-selected.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className={labelClass}>Name *</label>
+                  <input type="text" value={exForm.name} onChange={e => setExForm(p => ({...p, name: e.target.value}))} placeholder="e.g. Barbell Squat" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Muscle Group</label>
+                  <select value={exForm.muscleGroup} onChange={e => setExForm(p => ({...p, muscleGroup: e.target.value}))} className={inputClass}>
+                    {MUSCLE_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Description</label>
+                  <textarea value={exForm.description} onChange={e => setExForm(p => ({...p, description: e.target.value}))} rows={2} className={`${inputClass} resize-none`} />
+                </div>
+                <ExerciseMediaSection
+                  mediaType={exMediaType}
+                  setMediaType={(t) => { setExMediaType(t); if (t === 'images') handleVideoRemove(); else { setExImageFiles([null,null,null]); setExImagePreviews([null,null,null]); } }}
+                  imagePreviews={exImagePreviews}
+                  onImageSelect={handleImageSelect}
+                  onImageRemove={handleImageRemove}
+                  videoPreview={exVideoPreview}
+                  onVideoSelect={handleVideoSelect}
+                  onVideoRemove={handleVideoRemove}
+                />
+                <div className="flex justify-end gap-2 pt-2">
+                  <button onClick={() => { setQuickAddModal(false); resetExForm(); setQuickAddContext(null); }} className="font-['DM_Sans'] text-[13px] px-4 py-2.5 rounded-[4px] border border-[#383838] text-[#888] hover:text-[#f0ede6] transition-colors min-h-[44px]">Cancel</button>
+                  <button onClick={() => handleSaveExercise(true, quickAddContext)} disabled={savingEx} className="font-['DM_Sans'] text-[13px] font-medium px-4 py-2.5 rounded-[4px] bg-[#c8f135] text-[#0e0e0e] hover:opacity-90 transition-opacity disabled:opacity-50 min-h-[44px]">
+                    {savingEx ? 'Uploading...' : 'Add & Select'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -540,7 +816,7 @@ const Workouts = () => {
 
                 <div className="flex justify-end gap-2 pt-2">
                   <button onClick={() => { setExModal(false); resetExForm(); }} className="font-['DM_Sans'] text-[13px] px-4 py-2.5 rounded-[4px] border border-[#383838] text-[#888] hover:text-[#f0ede6] transition-colors min-h-[44px]">Cancel</button>
-                  <button onClick={handleSaveExercise} disabled={savingEx} className="font-['DM_Sans'] text-[13px] font-medium px-4 py-2.5 rounded-[4px] bg-[#c8f135] text-[#0e0e0e] hover:opacity-90 transition-opacity disabled:opacity-50 min-h-[44px]">
+                  <button onClick={() => handleSaveExercise(false)} disabled={savingEx} className="font-['DM_Sans'] text-[13px] font-medium px-4 py-2.5 rounded-[4px] bg-[#c8f135] text-[#0e0e0e] hover:opacity-90 transition-opacity disabled:opacity-50 min-h-[44px]">
                     {savingEx ? 'Uploading...' : 'Add'}
                   </button>
                 </div>
@@ -550,33 +826,69 @@ const Workouts = () => {
         </div>
       )}
 
-      {/* Assign Plan Modal */}
+      {/* Assign Plan Modal — multi-client, full-screen on mobile */}
       {assignModal && (
         <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-[1000]" onClick={() => setAssignModal(null)}>
-          <div className="bg-[#161616] border border-[#383838] rounded-t-[12px] sm:rounded-[6px] w-full sm:w-[380px] sm:max-w-[95vw]" onClick={e => e.stopPropagation()}>
-            <div className="sm:hidden flex justify-center pt-3 pb-1"><div className="w-10 h-1 bg-[#383838] rounded-full" /></div>
-            <div className="p-6 sm:p-8">
-              <div className="flex items-center justify-between mb-2">
+          <div className="bg-[#161616] border border-[#383838] rounded-t-[12px] sm:rounded-[6px] w-full sm:w-[460px] sm:max-w-[95vw] max-h-[95vh] sm:max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0"><div className="w-10 h-1 bg-[#383838] rounded-full" /></div>
+            <div className="p-6 sm:p-8 flex-shrink-0">
+              <div className="flex items-center justify-between mb-1">
                 <h2 className="font-['Bebas_Neue'] text-[22px] sm:text-[24px] text-[#f0ede6]">ASSIGN PLAN</h2>
                 <button onClick={() => setAssignModal(null)} className="sm:hidden text-[#555] text-[24px] leading-none">×</button>
               </div>
-              <p className="font-['DM_Sans'] text-[13px] text-[#555] mb-6">{assignModal.name}</p>
-              <div className="space-y-4">
-                <div>
-                  <label className={labelClass}>Client *</label>
-                  <select value={assignForm.clientId} onChange={e => setAssignForm(p => ({...p, clientId: e.target.value}))} className={inputClass}>
-                    <option value="">Select client...</option>
-                    {clients.map(c => <option key={c._id} value={c._id}>{c.firstName} {c.lastName}</option>)}
-                  </select>
-                </div>
+              <p className="font-['DM_Sans'] text-[13px] text-[#555] mb-4">{assignModal.name}</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className={labelClass}>Start Date</label>
                   <input type="date" value={assignForm.startDate} onChange={e => setAssignForm(p => ({...p, startDate: e.target.value}))} className={inputClass} />
                 </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <button onClick={() => setAssignModal(null)} className="font-['DM_Sans'] text-[13px] px-4 py-2.5 rounded-[4px] border border-[#383838] text-[#888] hover:text-[#f0ede6] transition-colors min-h-[44px]">Cancel</button>
-                  <button onClick={handleAssign} className="font-['DM_Sans'] text-[13px] font-medium px-4 py-2.5 rounded-[4px] bg-[#c8f135] text-[#0e0e0e] hover:opacity-90 transition-opacity min-h-[44px]">Assign</button>
+                <div>
+                  <label className={labelClass}>End Date <span className="text-[#383838]">(optional)</span></label>
+                  <input type="date" value={assignForm.endDate} onChange={e => setAssignForm(p => ({...p, endDate: e.target.value}))} className={inputClass} />
                 </div>
+              </div>
+
+              <div className="relative mb-1">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#555]" />
+                <input
+                  type="text"
+                  placeholder="Search clients..."
+                  value={assignClientSearch}
+                  onChange={e => setAssignClientSearch(e.target.value)}
+                  className="w-full bg-[#1f1f1f] border border-[#383838] text-[#f0ede6] font-['DM_Sans'] text-[13px] pl-8 pr-3 py-2 rounded-[4px] outline-none focus:border-[#c8f135]"
+                />
+              </div>
+              <div className="text-[11px] text-[#555] font-['DM_Mono'] mb-2">{assignForm.clientIds.length} selected</div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 sm:px-8">
+              {filteredAssignClients.length === 0 ? (
+                <p className="text-[#555] text-[13px] font-['DM_Sans'] py-4">No clients found.</p>
+              ) : filteredAssignClients.map(c => (
+                <label key={c._id} className="flex items-center gap-3 py-2.5 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={assignForm.clientIds.includes(c._id)}
+                    onChange={() => toggleAssignClient(c._id)}
+                    className="w-4 h-4 accent-[#c8f135] cursor-pointer flex-shrink-0"
+                  />
+                  <div className="w-7 h-7 rounded-full bg-[#2a2a2a] flex items-center justify-center flex-shrink-0 font-['DM_Mono'] text-[10px] text-[#888] border border-[#383838]">
+                    {c.firstName?.[0]}{c.lastName?.[0]}
+                  </div>
+                  <span className="text-[13px] font-['DM_Sans'] text-[#f0ede6] group-hover:text-[#c8f135] transition-colors flex-1">
+                    {c.firstName} {c.lastName}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="p-6 sm:p-8 flex-shrink-0 border-t border-[#2a2a2a]">
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setAssignModal(null)} className="font-['DM_Sans'] text-[13px] px-4 py-2.5 rounded-[4px] border border-[#383838] text-[#888] hover:text-[#f0ede6] transition-colors min-h-[44px]">Cancel</button>
+                <button onClick={handleAssign} className="font-['DM_Sans'] text-[13px] font-medium px-4 py-2.5 rounded-[4px] bg-[#c8f135] text-[#0e0e0e] hover:opacity-90 transition-opacity min-h-[44px]">
+                  Assign to {assignForm.clientIds.length || 0} Client{assignForm.clientIds.length !== 1 ? 's' : ''}
+                </button>
               </div>
             </div>
           </div>
