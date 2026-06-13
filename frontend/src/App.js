@@ -12,6 +12,7 @@ import ClientDetail from './pages/ClientDetail';
 import Schedule from './pages/Schedule';
 import Workouts from './pages/Workouts';
 import Payments from './pages/Payments';
+import Reminders from './pages/Reminders';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/schedule"  element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/workouts"  element={<ProtectedRoute><Workouts /></ProtectedRoute>} />
             <Route path="/payments"  element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+            <Route path="/reminders" element={<ProtectedRoute><Reminders /></ProtectedRoute>} />
 
             {/* Default redirect */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

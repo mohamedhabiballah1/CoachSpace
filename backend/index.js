@@ -1,9 +1,11 @@
 const connectDB = require('./utils/db');
 const express = require('express');
-const dotenv = require('dotenv').config(); 
+const dotenv = require('dotenv').config();
 const cors = require('cors');
 const fs = require("fs");
 const path = require("path");
+const cron = require('node-cron');
+const { processDueReminders } = require('./controllers/reminders.controller');
 
 const PORT = process.env.PORT || 8000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -38,6 +40,9 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ success: true, status: 'ok' });
 });
+
+// Process due reminders every minute
+cron.schedule('* * * * *', processDueReminders);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
