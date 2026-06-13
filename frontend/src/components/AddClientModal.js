@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Camera, Upload } from 'lucide-react';
 import { uploadFile } from '../utils/upload';
 import { useToast } from '../context/ToastContext';
 
@@ -19,6 +20,19 @@ const COUNTRIES = [
   { code: '+31',  flag: '🇳🇱', name: 'Netherlands' },
   { code: '+351', flag: '🇵🇹', name: 'Portugal' },
 ];
+
+const BODY_ANGLES = ['front', 'side', 'back'];
+
+const BodySilhouetteSVG = () => (
+  <svg viewBox="0 0 60 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-20 opacity-30">
+    <circle cx="30" cy="12" r="10" fill="#555" />
+    <rect x="18" y="24" width="24" height="36" rx="4" fill="#555" />
+    <rect x="6"  y="24" width="10" height="28" rx="4" fill="#555" />
+    <rect x="44" y="24" width="10" height="28" rx="4" fill="#555" />
+    <rect x="18" y="60" width="10" height="38" rx="4" fill="#555" />
+    <rect x="32" y="60" width="10" height="38" rx="4" fill="#555" />
+  </svg>
+);
 
 const Field = ({ label, name, value, onChange, type = 'number', placeholder = '' }) => (
   <div className="flex flex-col gap-1.5">
@@ -142,6 +156,12 @@ const AddClientModal = ({ isOpen, onClose, newClient, setNewClient, onAddClient 
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [countryCode, setCountryCode] = useState('+212');
+
+  // Body photos state — [front, side, back]
+  const [bodyFiles, setBodyFiles]       = useState([null, null, null]);
+  const [bodyPreviews, setBodyPreviews] = useState([null, null, null]);
+  const bodyRefs = [useRef(null), useRef(null), useRef(null)];
+
   const fileRef = useRef(null);
 
   const set = (name, value) => setNewClient(prev => ({ ...prev, [name]: value }));
@@ -155,6 +175,24 @@ const AddClientModal = ({ isOpen, onClose, newClient, setNewClient, onAddClient 
     reader.readAsDataURL(file);
   };
 
+  const handleBodyPhotoSelect = (index, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { showToast('Max 5MB per photo', 'error'); return; }
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { showToast('Only JPEG, PNG, WebP accepted', 'error'); return; }
+    const newFiles = [...bodyFiles]; newFiles[index] = file; setBodyFiles(newFiles);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const newPreviews = [...bodyPreviews]; newPreviews[index] = ev.target.result; setBodyPreviews(newPreviews);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeBodyPhoto = (index) => {
+    const newFiles = [...bodyFiles]; newFiles[index] = null; setBodyFiles(newFiles);
+    const newPreviews = [...bodyPreviews]; newPreviews[index] = null; setBodyPreviews(newPreviews);
+  };
+
   const handleSubmit = async () => {
     setUploading(true);
     try {
@@ -162,12 +200,22 @@ const AddClientModal = ({ isOpen, onClose, newClient, setNewClient, onAddClient 
       if (imageFile) {
         profileImageUrl = await uploadFile(imageFile, 'image');
       }
-      if (profileImageUrl) {
-        setNewClient(prev => ({ ...prev, profileImage: profileImageUrl }));
-        await onAddClient({ profileImage: profileImageUrl });
-      } else {
-        await onAddClient({});
+
+      // Upload body photos
+      const photos = [];
+      for (let i = 0; i < 3; i++) {
+        if (bodyFiles[i]) {
+          const url = await uploadFile(bodyFiles[i], 'image');
+          photos.push({ url, angle: BODY_ANGLES[i] });
+        }
       }
+
+      const extra = {};
+      if (profileImageUrl) extra.profileImage = profileImageUrl;
+      if (photos.length > 0) extra.photos = photos;
+
+      if (profileImageUrl) setNewClient(prev => ({ ...prev, profileImage: profileImageUrl }));
+      await onAddClient(extra);
     } catch (err) {
       showToast(err.message || 'Upload failed', 'error');
     } finally {
@@ -178,6 +226,8 @@ const AddClientModal = ({ isOpen, onClose, newClient, setNewClient, onAddClient 
   const handleClose = () => {
     setImagePreview(null);
     setImageFile(null);
+    setBodyFiles([null, null, null]);
+    setBodyPreviews([null, null, null]);
     setCountryCode('+212');
     onClose();
   };
@@ -189,7 +239,7 @@ const AddClientModal = ({ isOpen, onClose, newClient, setNewClient, onAddClient 
 
   return (
     <>
-      {/* Desktop: centered modal | Mobile: full screen */}
+      {/* Desktop: centered modal | Mobile: full screen bottom sheet */}
       <div
         className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-[1000]"
         onClick={handleClose}
@@ -226,7 +276,7 @@ const AddClientModal = ({ isOpen, onClose, newClient, setNewClient, onAddClient 
                   </div>
                 )}
                 <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-[20px]">📷</span>
+                  <Camera size={20} className="text-white" />
                 </div>
               </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
@@ -242,7 +292,6 @@ const AddClientModal = ({ isOpen, onClose, newClient, setNewClient, onAddClient 
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <Field label="Email" name="email" value={newClient.email} onChange={set} type="email" placeholder="email@example.com" />
-              {/* Phone with country code */}
               <div className="flex flex-col gap-1.5">
                 <label className="font-['DM_Mono'] text-[10px] uppercase tracking-[0.08em] text-[#555]">Phone</label>
                 <div className="flex gap-2">
@@ -291,6 +340,60 @@ const AddClientModal = ({ isOpen, onClose, newClient, setNewClient, onAddClient 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <Field label="Body Fat (%)" name="bodyFat" value={newClient.bodyFat} onChange={set} placeholder="20" />
               <Field label="Muscle Mass (kg)" name="muscleMass" value={newClient.muscleMass} onChange={set} placeholder="45" />
+            </div>
+
+            {/* Body Photos */}
+            <div className="h-[1px] bg-[#2a2a2a] my-5" />
+            <div className="font-['DM_Mono'] text-[10px] uppercase tracking-[0.1em] text-[#555] mb-1">Body Photos <span className="text-[#383838]">(optional)</span></div>
+            <p className="font-['DM_Sans'] text-[11px] text-[#383838] mb-4">These will appear as Day 1 in the photo timeline.</p>
+
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {BODY_ANGLES.map((angle, i) => (
+                <div key={angle} className="flex flex-col items-center gap-2">
+                  <span className="font-['DM_Mono'] text-[10px] uppercase tracking-wide text-[#555] capitalize">{angle}</span>
+                  <div
+                    className={`relative w-full aspect-[3/4] rounded-[6px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden group transition-colors ${
+                      bodyPreviews[i] ? 'border-[#383838]' : 'border-[#2a2a2a] hover:border-[#555]'
+                    }`}
+                    onClick={() => !bodyPreviews[i] && bodyRefs[i].current?.click()}
+                  >
+                    {bodyPreviews[i] ? (
+                      <>
+                        <img src={bodyPreviews[i]} alt={angle} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); bodyRefs[i].current?.click(); }}
+                            className="bg-white/20 text-white p-1.5 rounded-full"
+                          >
+                            <Camera size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); removeBodyPhoto(i); }}
+                            className="bg-red-500/80 text-white p-1.5 rounded-full text-[12px] leading-none"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <BodySilhouetteSVG />
+                        <Upload size={14} className="text-[#555] mt-1" />
+                        <span className="font-['DM_Mono'] text-[9px] text-[#555] mt-1 uppercase">Upload</span>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    ref={bodyRefs[i]}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={e => handleBodyPhotoSelect(i, e)}
+                  />
+                </div>
+              ))}
             </div>
 
             <div className="h-[1px] bg-[#2a2a2a] my-5" />
