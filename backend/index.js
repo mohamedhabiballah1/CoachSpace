@@ -28,7 +28,7 @@ fs.readdirSync(routesDirectory).forEach(file => {
     const routeName = file.replace(".routes.js", "");
     app.use(`/api/${routeName}`, route);
 });
-
+console.log('MONGO_URI:', process.env.MONGO_URI);
 connectDB();
 
 app.use(express.json());
